@@ -30,7 +30,7 @@
 
 MAINTAINERCLEANFILES = Makefile.in
 
-noinst_HEADERS = log.h bswap.h hpm2.h helper.h ipmi.h ipmi_cc.h ipmi_intf.h \
+include_HEADERS = log.h bswap.h hpm2.h helper.h ipmi.h ipmi_cc.h ipmi_intf.h \
 	ipmi_chassis.h ipmi_entity.h ipmi_fru.h ipmi_hpmfwupg.h ipmi_lanp.h \
 	ipmi_sdr.h ipmi_sel.h ipmi_sol.h ipmi_mc.h ipmi_raw.h \
 	ipmi_channel.h ipmi_sensor.h ipmi_event.h ipmi_session.h \
@@ -38,6 +38,6 @@ noinst_HEADERS = log.h bswap.h hpm2.h helper.h ipmi.h ipmi_cc.h ipmi_intf.h \
 	ipmi_oem.h ipmi_sdradd.h ipmi_isol.h ipmi_sunoem.h ipmi_picmg.h \
 	ipmi_fwum.h ipmi_main.h ipmi_tsol.h ipmi_firewall.h \
 	ipmi_kontronoem.h ipmi_ekanalyzer.h ipmi_gendev.h ipmi_ime.h \
-	ipmi_delloem.h ipmi_dcmi.h ipmi_vita.h ipmi_sel_supermicro.h \
+	ipmi_dcmi.h ipmi_vita.h ipmi_sel_supermicro.h \
 	ipmi_cfgp.h ipmi_lanp6.h ipmi_quantaoem.h ipmi_time.h
 
