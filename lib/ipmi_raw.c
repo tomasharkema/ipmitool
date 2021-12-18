@@ -316,7 +316,7 @@ ipmi_raw_help()
 } /* ipmi_raw_help() */
 
 int
-ipmi_raw_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_raw_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct ipmi_rs * rsp;
 	struct ipmi_rq req;
@@ -401,10 +401,10 @@ ipmi_raw_main(struct ipmi_intf * intf, int argc, char ** argv)
 	/* print the raw response buffer */
 	for (i=0; i<rsp->data_len; i++) {
 		if (((i%16) == 0) && (i != 0))
-			printf("\n");
-		printf(" %2.2x", rsp->data[i]);
+			fprintf(file, "\n");
+        fprintf(file, " %2.2x", rsp->data[i]);
 	}
-	printf("\n");
+    fprintf(file, "\n");
 
 	return 0;
 }
