@@ -65,48 +65,48 @@ typedef enum {
  * print_session_info_csv
  */
 static void
-print_session_info_csv(const struct  get_session_info_rsp * session_info,
+print_session_info_csv(FILE *file, const struct  get_session_info_rsp * session_info,
 					   int data_len)
 {
 	char     buffer[18];
 	uint16_t console_port_tmp;
-	
-	printf("%d", session_info->session_handle);
-	printf(",%d", session_info->session_slot_count);
-	printf(",%d", session_info->active_session_count);
+
+    fprintf(file,"%d", session_info->session_handle);
+    fprintf(file,",%d", session_info->session_slot_count);
+    fprintf(file,",%d", session_info->active_session_count);
 
 	if (data_len == 3)
 	{
 		/* There is no session data here*/
-		printf("\n");
+        fprintf(file,"\n");
 		return;
 	}
 
-	printf(",%d", session_info->user_id);
-	printf(",%s", val2str(session_info->privilege_level, ipmi_privlvl_vals));
+    fprintf(file,",%d", session_info->user_id);
+    fprintf(file,",%s", val2str(session_info->privilege_level, ipmi_privlvl_vals));
 
-	printf(",%s", session_info->auxiliary_data?
+    fprintf(file,",%s", session_info->auxiliary_data?
 		   "IPMIv2/RMCP+" : "IPMIv1.5");
 
-	printf(",0x%02x", session_info->channel_number);
+    fprintf(file,",0x%02x", session_info->channel_number);
 
 	if (data_len == 18)
 	{
 		/* We have 802.3 LAN data */
-		printf(",%s",
+        fprintf(file,",%s",
 			   inet_ntop(AF_INET,
 						 &(session_info->channel_data.lan_data.console_ip),
 						 buffer,
 						 16));
 
-		printf(",%s", mac2str(
+        fprintf(file,",%s", mac2str(
 			session_info->channel_data.lan_data.console_mac));
 
 		console_port_tmp = session_info->channel_data.lan_data.console_port;
 		#if WORDS_BIGENDIAN
 		console_port_tmp = BSWAP_16(console_port_tmp);
 		#endif
-		printf(",%d", console_port_tmp);
+        fprintf(file,",%d", console_port_tmp);
 	}
 
 
@@ -224,11 +224,11 @@ print_session_info_verbose(const struct  get_session_info_rsp * session_info,
 }
 
 
-static void print_session_info(const struct  get_session_info_rsp * session_info,
+static void print_session_info(FILE *file, const struct  get_session_info_rsp * session_info,
 							   int data_len)
 {
 	if (csv_output)
-		print_session_info_csv(session_info, data_len);
+		print_session_info_csv(file, session_info, data_len);
 	else
 		print_session_info_verbose(session_info, data_len);
 }
@@ -241,7 +241,7 @@ static void print_session_info(const struct  get_session_info_rsp * session_info
  *         -1 on error
  */
 int
-ipmi_get_session_info(struct ipmi_intf         * intf,
+ipmi_get_session_info(FILE *file, struct ipmi_intf         * intf,
 					  Ipmi_Session_Request_Type  session_request_type,
 					  uint32_t                   id_or_handle)
 {
@@ -313,7 +313,7 @@ ipmi_get_session_info(struct ipmi_intf         * intf,
 		{
 			memcpy(&session_info,  rsp->data,
 			       __min(rsp->data_len, sizeof(session_info)));
-			print_session_info(&session_info,
+			print_session_info(file, &session_info,
 			                   __min(rsp->data_len, sizeof(session_info)));
 		}
 		break;
@@ -347,7 +347,7 @@ ipmi_get_session_info(struct ipmi_intf         * intf,
 
 			memcpy(&session_info,  rsp->data,
 			       __min(rsp->data_len, sizeof(session_info)));
-			print_session_info(&session_info,
+			print_session_info(file, &session_info,
 			                   __min(rsp->data_len, sizeof(session_info)));
 			
 		} while (i <= session_info.session_slot_count);
@@ -367,7 +367,7 @@ printf_session_usage(void)
 
 
 int
-ipmi_session_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_session_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int retval = 0;
 
@@ -438,7 +438,7 @@ ipmi_session_main(struct ipmi_intf * intf, int argc, char ** argv)
 			
 
 			if (retval == 0)
-				retval = ipmi_get_session_info(intf,
+				retval = ipmi_get_session_info(file, intf,
 											   session_request_type,
 											   id_or_handle);
 		}

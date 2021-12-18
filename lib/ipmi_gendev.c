@@ -532,7 +532,7 @@ ipmi_gendev_write_file(
  * returns -1 on error
  */
 int
-ipmi_gendev_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_gendev_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
    int rc = 0;
 
@@ -552,7 +552,7 @@ ipmi_gendev_main(struct ipmi_intf *intf, int argc, char **argv)
       lprintf(LOG_ERR,
          "                     write <sdr name> <file>  Write from file eeprom specify by Generic Device Locators");
    } else if (!strcmp(argv[0], "list")) {
-      rc = ipmi_sdr_print_sdr(intf, SDR_RECORD_TYPE_GENERIC_DEVICE_LOCATOR);
+      rc = ipmi_sdr_print_sdr(file, intf, SDR_RECORD_TYPE_GENERIC_DEVICE_LOCATOR);
    } else if (!strcmp(argv[0], "read")) {
       if (argc < 3)
          lprintf(LOG_ERR, "usage: gendev read <gendev> <filename>");

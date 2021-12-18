@@ -212,7 +212,7 @@ int _ipmi_set_channel_access(struct ipmi_intf *intf,
 uint8_t ipmi_get_channel_medium(struct ipmi_intf * intf, uint8_t channel);
 void ipmi_current_channel_info(struct ipmi_intf *intf,
                                struct channel_info_t *chinfo);
-int ipmi_channel_main(struct ipmi_intf * intf, int argc, char ** argv);
+int ipmi_channel_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);
 int ipmi_get_channel_auth_cap(struct ipmi_intf * intf,
                               uint8_t channel, uint8_t priv);
 int ipmi_get_channel_info(struct ipmi_intf * intf, uint8_t channel);

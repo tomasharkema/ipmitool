@@ -210,7 +210,7 @@ __sdr_list_empty(struct sdr_record_list * head)
  *  The state parameter is not referenced if stat is not PRINT_NORMAL.
  */
 static void
-led_print(const char * name, print_status_t stat, uint8_t state)
+led_print(FILE *file, const char * name, print_status_t stat, uint8_t state)
 {
 	const char *theValue;
 
@@ -221,9 +221,9 @@ led_print(const char * name, print_status_t stat, uint8_t state)
 	}
 
 	if (csv_output) {
-		printf("%s,%s\n", name, theValue);
+		fprintf(file, "%s,%s\n", name, theValue);
 	} else {
-		printf("%-16s | %s\n", name, theValue);
+		fprintf(file, "%-16s | %s\n", name, theValue);
 	}
 }
 
@@ -342,7 +342,7 @@ sunoem_led_set(struct ipmi_intf * intf, struct sdr_record_generic_locator * dev,
 }
 
 static void
-sunoem_led_get_byentity(struct ipmi_intf * intf, uint8_t entity_id,
+sunoem_led_get_byentity(FILE *file, struct ipmi_intf * intf, uint8_t entity_id,
 		uint8_t entity_inst, int ledtype)
 {
 	struct ipmi_rs * rsp;
@@ -371,10 +371,10 @@ sunoem_led_get_byentity(struct ipmi_intf * intf, uint8_t entity_id,
 		res = sunoem_led_get(intf, e->record.genloc, ledtype, &rsp);
 
 		if (res == SUNOEM_EC_SUCCESS && rsp && rsp->data_len == 1) {
-			led_print((const char *) e->record.genloc->id_string, PRINT_NORMAL,
+			led_print(file, (const char *) e->record.genloc->id_string, PRINT_NORMAL,
 					rsp->data[0]);
 		} else {
-			led_print((const char *) e->record.genloc->id_string, PRINT_ERROR,
+			led_print(file, (const char *) e->record.genloc->id_string, PRINT_ERROR,
 					0);
 			if (res != SUNOEM_EC_BMC_CCODE_NONZERO|| !rsp
 			|| rsp->ccode != CC_DEST_UNAVAILABLE) {
@@ -386,7 +386,7 @@ sunoem_led_get_byentity(struct ipmi_intf * intf, uint8_t entity_id,
 }
 
 static void
-sunoem_led_set_byentity(struct ipmi_intf * intf, uint8_t entity_id,
+sunoem_led_set_byentity(FILE *file, struct ipmi_intf * intf, uint8_t entity_id,
 		uint8_t entity_inst, int ledtype, int ledmode)
 {
 	struct ipmi_rs * rsp;
@@ -414,7 +414,7 @@ sunoem_led_set_byentity(struct ipmi_intf * intf, uint8_t entity_id,
 
 		rsp = sunoem_led_set(intf, e->record.genloc, ledtype, ledmode);
 		if (rsp && rsp->data_len == 0) {
-			led_print((const char *) e->record.genloc->id_string, PRINT_NORMAL,
+			led_print(file, (const char *) e->record.genloc->id_string, PRINT_NORMAL,
 					ledmode);
 		} else if (!rsp) {
 			ret_set = -1;
@@ -445,7 +445,7 @@ sunoem_led_set_byentity(struct ipmi_intf * intf, uint8_t entity_id,
  *                       Ignored if LED is local
  */
 static int
-ipmi_sunoem_led_get(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_sunoem_led_get(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct ipmi_rs * rsp;
 	struct sdr_record_list *sdr;
@@ -488,10 +488,10 @@ ipmi_sunoem_led_get(struct ipmi_intf * intf, int argc, char ** argv)
 			res = sunoem_led_get(intf, a->record.genloc, ledtype, &rsp);
 
 			if (res == SUNOEM_EC_SUCCESS && rsp && rsp->data_len == 1) {
-				led_print((const char *) a->record.genloc->id_string,
+				led_print(file, (const char *) a->record.genloc->id_string,
 						PRINT_NORMAL, rsp->data[0]);
 			} else {
-				led_print((const char *) a->record.genloc->id_string,
+				led_print(file, (const char *) a->record.genloc->id_string,
 						PRINT_ERROR, 0);
 				if (res != SUNOEM_EC_BMC_CCODE_NONZERO|| !rsp ||
 				rsp->ccode != CC_DEST_UNAVAILABLE) {
@@ -528,11 +528,11 @@ ipmi_sunoem_led_get(struct ipmi_intf * intf, int argc, char ** argv)
 		res = sunoem_led_get(intf, sdr->record.genloc, ledtype, &rsp);
 
 		if (res == SUNOEM_EC_SUCCESS && rsp && rsp->data_len == 1) {
-			led_print((const char *) sdr->record.genloc->id_string,
+			led_print(file, (const char *) sdr->record.genloc->id_string,
 					PRINT_NORMAL, rsp->data[0]);
 
 		} else {
-			led_print((const char *) sdr->record.genloc->id_string, PRINT_ERROR,
+			led_print(file, (const char *) sdr->record.genloc->id_string, PRINT_ERROR,
 					0);
 			if (res != SUNOEM_EC_BMC_CCODE_NONZERO|| !rsp
 			|| rsp->ccode != CC_DEST_UNAVAILABLE) {
@@ -582,25 +582,25 @@ ipmi_sunoem_led_get(struct ipmi_intf * intf, int argc, char ** argv)
 			/* first range set - id 1 and 2 must be equal */
 			if (assoc->entity_id_1 == assoc->entity_id_2)
 				for (i = assoc->entity_inst_1; i <= assoc->entity_inst_2; i++)
-					sunoem_led_get_byentity(intf, assoc->entity_id_1, i,
+					sunoem_led_get_byentity(file, intf, assoc->entity_id_1, i,
 							ledtype);
 
 			/* second range set - id 3 and 4 must be equal */
 			if (assoc->entity_id_3 == assoc->entity_id_4)
 				for (i = assoc->entity_inst_3; i <= assoc->entity_inst_4; i++)
-					sunoem_led_get_byentity(intf, assoc->entity_id_3, i,
+					sunoem_led_get_byentity(file, intf, assoc->entity_id_3, i,
 							ledtype);
 		} else {
 			/*
 			 * handle entity list
 			 */
-			sunoem_led_get_byentity(intf, assoc->entity_id_1,
+			sunoem_led_get_byentity(file, intf, assoc->entity_id_1,
 					assoc->entity_inst_1, ledtype);
-			sunoem_led_get_byentity(intf, assoc->entity_id_2,
+			sunoem_led_get_byentity(file, intf, assoc->entity_id_2,
 					assoc->entity_inst_2, ledtype);
-			sunoem_led_get_byentity(intf, assoc->entity_id_3,
+			sunoem_led_get_byentity(file, intf, assoc->entity_id_3,
 					assoc->entity_inst_3, ledtype);
-			sunoem_led_get_byentity(intf, assoc->entity_id_4,
+			sunoem_led_get_byentity(file, intf, assoc->entity_id_4,
 					assoc->entity_inst_4, ledtype);
 		}
 	}
@@ -643,7 +643,7 @@ ipmi_sunoem_led_get(struct ipmi_intf * intf, int argc, char ** argv)
  */
 
 static int
-ipmi_sunoem_led_set(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_sunoem_led_set(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct ipmi_rs * rsp;
 	struct sdr_record_list *sdr;
@@ -693,7 +693,7 @@ ipmi_sunoem_led_set(struct ipmi_intf * intf, int argc, char ** argv)
 				continue;
 			rsp = sunoem_led_set(intf, a->record.genloc, ledtype, ledmode);
 			if (rsp && !rsp->ccode)
-				led_print((const char *) a->record.genloc->id_string,
+				led_print(file, (const char *) a->record.genloc->id_string,
 						PRINT_NORMAL, ledmode);
 			else
 				ret_set = -1;
@@ -725,7 +725,7 @@ ipmi_sunoem_led_set(struct ipmi_intf * intf, int argc, char ** argv)
 		 */
 		rsp = sunoem_led_set(intf, sdr->record.genloc, ledtype, ledmode);
 		if (rsp && !rsp->ccode)
-			led_print(argv[0], PRINT_NORMAL, ledmode);
+			led_print(file, argv[0], PRINT_NORMAL, ledmode);
 		else
 			return (-1);
 
@@ -768,25 +768,25 @@ ipmi_sunoem_led_set(struct ipmi_intf * intf, int argc, char ** argv)
 			/* first range set - id 1 and 2 must be equal */
 			if (assoc->entity_id_1 == assoc->entity_id_2)
 				for (i = assoc->entity_inst_1; i <= assoc->entity_inst_2; i++)
-					sunoem_led_set_byentity(intf, assoc->entity_id_1, i,
+					sunoem_led_set_byentity(file, intf, assoc->entity_id_1, i,
 							ledtype, ledmode);
 
 			/* second range set - id 3 and 4 must be equal */
 			if (assoc->entity_id_3 == assoc->entity_id_4)
 				for (i = assoc->entity_inst_3; i <= assoc->entity_inst_4; i++)
-					sunoem_led_set_byentity(intf, assoc->entity_id_3, i,
+					sunoem_led_set_byentity(file, intf, assoc->entity_id_3, i,
 							ledtype, ledmode);
 		} else {
 			/*
 			 * handle entity list
 			 */
-			sunoem_led_set_byentity(intf, assoc->entity_id_1,
+			sunoem_led_set_byentity(file, intf, assoc->entity_id_1,
 					assoc->entity_inst_1, ledtype, ledmode);
-			sunoem_led_set_byentity(intf, assoc->entity_id_2,
+			sunoem_led_set_byentity(file, intf, assoc->entity_id_2,
 					assoc->entity_inst_2, ledtype, ledmode);
-			sunoem_led_set_byentity(intf, assoc->entity_id_3,
+			sunoem_led_set_byentity(file, intf, assoc->entity_id_3,
 					assoc->entity_inst_3, ledtype, ledmode);
-			sunoem_led_set_byentity(intf, assoc->entity_id_4,
+			sunoem_led_set_byentity(file, intf, assoc->entity_id_4,
 					assoc->entity_inst_4, ledtype, ledmode);
 		}
 	}
@@ -2316,7 +2316,7 @@ ipmi_sunoem_getbehavior(struct ipmi_intf * intf, int argc, char *argv[])
 }
 
 int
-ipmi_sunoem_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_sunoem_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 
@@ -2338,16 +2338,16 @@ ipmi_sunoem_main(struct ipmi_intf * intf, int argc, char ** argv)
 		if (!strcmp(argv[1], "get")) {
 			if (argc < 3) {
 				char * arg[] = { "all" };
-				rc = ipmi_sunoem_led_get(intf, 1, arg);
+				rc = ipmi_sunoem_led_get(file, intf, 1, arg);
 			} else {
-				rc = ipmi_sunoem_led_get(intf, argc - 2, &(argv[2]));
+				rc = ipmi_sunoem_led_get(file, intf, argc - 2, &(argv[2]));
 			}
 		} else if (!strcmp(argv[1], "set")) {
 			if (argc < 4) {
 				ipmi_sunoem_usage();
 				return (-1);
 			}
-			rc = ipmi_sunoem_led_set(intf, argc - 2, &(argv[2]));
+			rc = ipmi_sunoem_led_set(file, intf, argc - 2, &(argv[2]));
 		} else {
 			ipmi_sunoem_usage();
 			return (-1);

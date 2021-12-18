@@ -169,7 +169,7 @@ struct thermal_limit {
     uint16_t exceptionTime;
 } __attribute__ ((packed));
 
-int ipmi_dcmi_main(struct ipmi_intf * intf, int argc, char ** argv);
+int ipmi_dcmi_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);
 
 /* Node Manager discover command */
 struct nm_discover {
@@ -264,4 +264,4 @@ struct nm_suspend {
     struct nm_period period[IPMI_NM_SUSPEND_PERIOD_MAX];
 } __attribute__ ((packed));
 
-int ipmi_nm_main(struct ipmi_intf * intf, int argc, char ** argv);
+int ipmi_nm_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);

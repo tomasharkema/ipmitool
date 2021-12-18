@@ -194,7 +194,7 @@ int ipmi_sel_oem_init(const char * filename)
 	return 0;
 }
 
-static void ipmi_sel_oem_message(struct sel_event_record * evt)
+static void ipmi_sel_oem_message(FILE *file, struct sel_event_record * evt)
 {
 	/*
 	 * Note: although we have a verbose argument, currently the output
@@ -204,12 +204,24 @@ static void ipmi_sel_oem_message(struct sel_event_record * evt)
 
 	for (i=0; i < sel_oem_nrecs; i++) {
 		if (ipmi_sel_oem_match((uint8_t *)evt, &sel_oem_msg[i])) {
-			printf (csv_output ? ",\"%s\"" : " | %s", sel_oem_msg[i].text);
+
+            if (csv_output) {
+                fprintf(file, ",\"%s\"", sel_oem_msg[i].text);
+            } else {
+                printf(" | %s", sel_oem_msg[i].text);
+            }
+
 			for (j=4; j<17; j++) {
 				if (sel_oem_msg[i].value[SEL_BYTE(j)] == -3) {
-					printf (csv_output ? ",%s=0x%x" : " %s = 0x%x",
-						sel_oem_msg[i].string[SEL_BYTE(j)],
-						((uint8_t *)evt)[SEL_BYTE(j)]);
+                    if (csv_output) {
+                        fprintf(file, ",%s=0x%x",
+                                sel_oem_msg[i].string[SEL_BYTE(j)],
+                                ((uint8_t *)evt)[SEL_BYTE(j)]);
+                    } else {
+                        printf(" %s = 0x%x",
+                               sel_oem_msg[i].string[SEL_BYTE(j)],
+                               ((uint8_t *)evt)[SEL_BYTE(j)]);
+                    }
 				}
 			}
 		}
@@ -307,7 +319,7 @@ ipmi_get_oem(struct ipmi_intf * intf)
 }
 
 static int
-ipmi_sel_add_entry(struct ipmi_intf * intf, struct sel_event_record * rec)
+ipmi_sel_add_entry(FILE *file, struct ipmi_intf * intf, struct sel_event_record * rec)
 {
 	struct ipmi_rs * rsp;
 	struct ipmi_rq req;
@@ -318,7 +330,7 @@ ipmi_sel_add_entry(struct ipmi_intf * intf, struct sel_event_record * rec)
 	req.msg.data = (unsigned char *)rec;
 	req.msg.data_len = 16;
 
-	ipmi_sel_print_std_entry(intf, rec);
+	ipmi_sel_print_std_entry(file, intf, rec);
 
 	rsp = intf->sendrecv(intf, &req);
 	if (!rsp) {
@@ -336,7 +348,7 @@ ipmi_sel_add_entry(struct ipmi_intf * intf, struct sel_event_record * rec)
 
 
 static int
-ipmi_sel_add_entries_fromfile(struct ipmi_intf * intf, const char * filename)
+ipmi_sel_add_entries_fromfile(FILE *file, struct ipmi_intf * intf, const char * filename)
 {
 	FILE * fp;
 	char buf[1024];
@@ -411,7 +423,7 @@ ipmi_sel_add_entries_fromfile(struct ipmi_intf * intf, const char * filename)
 		sel_event.sel_type.standard_type.event_data[1] = rqdata[5];
 		sel_event.sel_type.standard_type.event_data[2] = rqdata[6];
 
-		rc = ipmi_sel_add_entry(intf, &sel_event);
+		rc = ipmi_sel_add_entry(file, intf, &sel_event);
 		if (rc < 0)
 			break;
 	}
@@ -1759,15 +1771,15 @@ ipmi_sel_print_event_file(struct ipmi_intf * intf, struct sel_event_record * evt
 }
 
 void
-ipmi_sel_print_extended_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
+ipmi_sel_print_extended_entry(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt)
 {
 	sel_extended++;
-	ipmi_sel_print_std_entry(intf, evt);
+	ipmi_sel_print_std_entry(file, intf, evt);
 	sel_extended--;
 }
 
 void
-ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
+ipmi_sel_print_std_entry(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt)
 {
 	char * description;
 	struct sdr_record_list * sdr = NULL;
@@ -1781,14 +1793,14 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 		return;
 
 	if (csv_output)
-		printf("%x,", evt->record_id);
+		fprintf(file, "%x,", evt->record_id);
 	else
 		printf("%4x | ", evt->record_id);
 
 	if (evt->record_type == 0xf0)
 	{
 		if (csv_output)
-			printf(",,");
+            fprintf(file,",,");
 
 		printf ("Linux kernel panic: %.11s\n", (char *) evt + 5);
 		return;
@@ -1800,13 +1812,13 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 			printf(" Pre-Init "); 
 
 			if (csv_output)
-				printf(",");
+                fprintf(file, ",");
 			else
 				printf(" |");
 
 			printf("%010d", evt->sel_type.standard_type.timestamp );
 			if (csv_output)
-				printf(",");
+                fprintf(file,",");
 			else
 				printf("| ");
 		}
@@ -1817,7 +1829,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 				printf("%s", ipmi_timestamp_date(evt->sel_type.oem_ts_type.timestamp));
 
 			if (csv_output)
-				printf(",");
+                fprintf(file,",");
 			else
 				printf(" | ");
 
@@ -1827,7 +1839,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 				printf("%s", ipmi_timestamp_time(evt->sel_type.oem_ts_type.timestamp));
 
 			if (csv_output)
-				printf(",");
+                fprintf(file,",");
 			else
 				printf(" | ");
 		}
@@ -1836,14 +1848,14 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 	else
 	{
 		if (csv_output)
-			printf(",,");
+            fprintf(file,",,");
 	}
 
 	if (evt->record_type >= 0xc0)
 	{
 		printf ("OEM record %02x", evt->record_type);
 		if (csv_output)
-			printf(",");
+            fprintf(file,",");
 		else
 			printf(" | ");
 
@@ -1851,7 +1863,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 		{
 			printf ("%02x%02x%02x", evt->sel_type.oem_ts_type.manf_id[0], evt->sel_type.oem_ts_type.manf_id[1], evt->sel_type.oem_ts_type.manf_id[2]);
 			if (csv_output)
-				printf(",");
+                fprintf(file,",");
 			else
 				printf(" | ");
 			for(data_count=0;data_count < SEL_OEM_TS_DATA_LEN;data_count++)
@@ -1862,7 +1874,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 			for(data_count=0;data_count < SEL_OEM_NOTS_DATA_LEN;data_count++)
 				printf("%02x", evt->sel_type.oem_nots_type.oem_defined[data_count]);
 		}
-		ipmi_sel_oem_message(evt);
+		ipmi_sel_oem_message(file, evt);
 		printf ("\n");
 		return;
 	}
@@ -1902,7 +1914,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 	}
 
 	if (csv_output)
-		printf(",");
+        fprintf(file,",");
 	else
 		printf(" | ");
 
@@ -1914,7 +1926,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 	}
 
 	if (csv_output) {
-		printf(",");
+        fprintf(file,",");
 	} else {
 		printf(" | ");
 	}
@@ -1947,7 +1959,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 		}
 
 		if (csv_output)
-			printf(",");
+            fprintf(file,",");
 		else
 			printf(" | ");
 		
@@ -1986,7 +1998,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 		    (evt->sel_type.standard_type.event_data[0] & 0x30) == 0x20) {
 			/* break down memory ECC reporting if we can */
 			if (csv_output)
-				printf(",");
+                fprintf(file,",");
 			else
 				printf(" | ");
 
@@ -2000,7 +2012,7 @@ ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt)
 }
 
 void
-ipmi_sel_print_std_entry_verbose(struct ipmi_intf * intf, struct sel_event_record * evt)
+ipmi_sel_print_std_entry_verbose(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt)
 {
   char * description;
   int data_count;
@@ -2056,7 +2068,7 @@ ipmi_sel_print_std_entry_verbose(struct ipmi_intf * intf, struct sel_event_recor
 			for(data_count=0;data_count < SEL_OEM_NOTS_DATA_LEN;data_count++)
 				printf("%02x", evt->sel_type.oem_nots_type.oem_defined[data_count]);
 			printf(" [%s]\n\n",hex2ascii (evt->sel_type.oem_nots_type.oem_defined, SEL_OEM_NOTS_DATA_LEN));
-			ipmi_sel_oem_message(evt);
+			ipmi_sel_oem_message(file, evt);
 		}
 		return;
 	}
@@ -2087,7 +2099,7 @@ ipmi_sel_print_std_entry_verbose(struct ipmi_intf * intf, struct sel_event_recor
 
 
 void
-ipmi_sel_print_extended_entry_verbose(struct ipmi_intf * intf, struct sel_event_record * evt)
+ipmi_sel_print_extended_entry_verbose(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt)
 {
 	struct sdr_record_list * sdr;
 	char * description;
@@ -2101,7 +2113,7 @@ ipmi_sel_print_extended_entry_verbose(struct ipmi_intf * intf, struct sel_event_
 					  evt->sel_type.standard_type.sensor_type);
 	if (!sdr) 
 	{
-	    ipmi_sel_print_std_entry_verbose(intf, evt);
+	    ipmi_sel_print_std_entry_verbose(file, intf, evt);
 		return;
 	}
 
@@ -2241,7 +2253,7 @@ ipmi_sel_print_extended_entry_verbose(struct ipmi_intf * intf, struct sel_event_
 }
 
 static int
-__ipmi_sel_savelist_entries(struct ipmi_intf * intf, int count, const char * savefile,
+__ipmi_sel_savelist_entries(FILE *file, struct ipmi_intf * intf, int count, const char * savefile,
 							int binary)
 {
 	struct ipmi_rs * rsp;
@@ -2345,9 +2357,9 @@ __ipmi_sel_savelist_entries(struct ipmi_intf * intf, int count, const char * sav
 		}
 
 		if (verbose)
-			ipmi_sel_print_std_entry_verbose(intf, &evt);
+			ipmi_sel_print_std_entry_verbose(file, intf, &evt);
 		else
-			ipmi_sel_print_std_entry(intf, &evt);
+			ipmi_sel_print_std_entry(file, intf, &evt);
 
 		if (fp) {
 			if (binary)
@@ -2368,15 +2380,15 @@ __ipmi_sel_savelist_entries(struct ipmi_intf * intf, int count, const char * sav
 }
 
 static int
-ipmi_sel_list_entries(struct ipmi_intf * intf, int count)
+ipmi_sel_list_entries(FILE *file, struct ipmi_intf * intf, int count)
 {
-	return __ipmi_sel_savelist_entries(intf, count, NULL, 0);
+	return __ipmi_sel_savelist_entries(file, intf, count, NULL, 0);
 }
 
 static int
-ipmi_sel_save_entries(struct ipmi_intf * intf, int count, const char * savefile)
+ipmi_sel_save_entries(FILE *file, struct ipmi_intf * intf, int count, const char * savefile)
 {
-	return __ipmi_sel_savelist_entries(intf, count, savefile, 0);
+	return __ipmi_sel_savelist_entries(file, intf, count, savefile, 0);
 }
 
 /*
@@ -2386,7 +2398,7 @@ ipmi_sel_save_entries(struct ipmi_intf * intf, int count, const char * savefile)
  *        -1 on error
  */
 static int
-ipmi_sel_interpret(struct ipmi_intf *intf, unsigned long iana,
+ipmi_sel_interpret(FILE *file, struct ipmi_intf *intf, unsigned long iana,
 		const char *readfile, const char *format)
 {
 	FILE *fp = 0;
@@ -2595,9 +2607,9 @@ ipmi_sel_interpret(struct ipmi_intf *intf, unsigned long iana,
 			}
 			/* parse the PPS line into a sel_event_record */
 			if (verbose) {
-				ipmi_sel_print_std_entry_verbose(intf, &evt);
+				ipmi_sel_print_std_entry_verbose(file, intf, &evt);
 			} else {
-				ipmi_sel_print_std_entry(intf, &evt);
+				ipmi_sel_print_std_entry(file, intf, &evt);
 			}
 			cursor = NULL;
 		} while (status == 0); /* until file is completely read */
@@ -2614,14 +2626,14 @@ ipmi_sel_interpret(struct ipmi_intf *intf, unsigned long iana,
 
 
 static int
-ipmi_sel_writeraw(struct ipmi_intf * intf, const char * savefile)
+ipmi_sel_writeraw(FILE *file, struct ipmi_intf * intf, const char * savefile)
 {
-    return __ipmi_sel_savelist_entries(intf, 0, savefile, 1);
+    return __ipmi_sel_savelist_entries(file, intf, 0, savefile, 1);
 }
 
 
 static int
-ipmi_sel_readraw(struct ipmi_intf * intf, const char * inputfile)
+ipmi_sel_readraw(FILE *file, struct ipmi_intf * intf, const char * inputfile)
 {
 	struct sel_event_record evt;
 	int ret = 0;
@@ -2636,9 +2648,9 @@ ipmi_sel_readraw(struct ipmi_intf * intf, const char * inputfile)
 			if ((bytesRead = fread(&evt, 1, 16, fp)) == 16)
 			{
 				if (verbose)
-					ipmi_sel_print_std_entry_verbose(intf, &evt);
+					ipmi_sel_print_std_entry_verbose(file, intf, &evt);
 				else
-					ipmi_sel_print_std_entry(intf, &evt);
+					ipmi_sel_print_std_entry(file, intf, &evt);
 			}
 			else
 			{
@@ -2906,7 +2918,7 @@ ipmi_sel_delete(struct ipmi_intf * intf, int argc, char ** argv)
 }
 
 static int
-ipmi_sel_show_entry(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_sel_show_entry(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct entity_id entity;
 	struct sdr_record_list *entry;
@@ -2953,7 +2965,7 @@ ipmi_sel_show_entry(struct ipmi_intf * intf, int argc, char ** argv)
 		}
 
 		/* lookup SDR entry based on sensor number and type */
-		ipmi_sel_print_extended_entry_verbose(intf, &evt);
+		ipmi_sel_print_extended_entry_verbose(file, intf, &evt);
 
 		sdr = ipmi_sdr_find_sdr_bynumtype(intf,
 				evt.sel_type.standard_type.gen_id,
@@ -2969,13 +2981,13 @@ ipmi_sel_show_entry(struct ipmi_intf * intf, int argc, char ** argv)
 		switch (sdr->type) {
 		case SDR_RECORD_TYPE_FULL_SENSOR:
 		case SDR_RECORD_TYPE_COMPACT_SENSOR:
-			ipmi_sensor_print_fc(intf, sdr->record.common,
+			ipmi_sensor_print_fc(file, intf, sdr->record.common,
 					     sdr->type);
 			entity.id = sdr->record.common->entity.id;
 			entity.instance = sdr->record.common->entity.instance;
 			break;
 		case SDR_RECORD_TYPE_EVENTONLY_SENSOR:
-			ipmi_sdr_print_sensor_eventonly(intf, sdr->record.eventonly);
+			ipmi_sdr_print_sensor_eventonly(file, intf, sdr->record.eventonly);
 			entity.id = sdr->record.eventonly->entity.id;
 			entity.instance = sdr->record.eventonly->entity.instance;
 			break;
@@ -3001,7 +3013,7 @@ ipmi_sel_show_entry(struct ipmi_intf * intf, int argc, char ** argv)
 	return rc;
 }
 
-int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
+int ipmi_sel_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 
@@ -3021,7 +3033,7 @@ int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
 					argv[1]);
 			return (-1);
 		}
-		rc = ipmi_sel_interpret(intf, iana, argv[2], argv[3]);
+		rc = ipmi_sel_interpret(file, intf, iana, argv[2], argv[3]);
 	}
 	else if (!strcmp(argv[0], "info"))
 		rc = ipmi_sel_get_info(intf);
@@ -3030,28 +3042,28 @@ int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
 			lprintf(LOG_NOTICE, "usage: sel save <filename>");
 			return 0;
 		}
-		rc = ipmi_sel_save_entries(intf, 0, argv[1]);
+		rc = ipmi_sel_save_entries(file, intf, 0, argv[1]);
 	}
 	else if (!strcmp(argv[0], "add")) {
 		if (argc < 2) {
 			lprintf(LOG_NOTICE, "usage: sel add <filename>");
 			return 0;
 		}
-		rc = ipmi_sel_add_entries_fromfile(intf, argv[1]);
+		rc = ipmi_sel_add_entries_fromfile(file, intf, argv[1]);
 	}
 	else if (!strcmp(argv[0], "writeraw")) {
 		if (argc < 2) {
 			lprintf(LOG_NOTICE, "usage: sel writeraw <filename>");
 			return 0;
 		}
-		rc = ipmi_sel_writeraw(intf, argv[1]);
+		rc = ipmi_sel_writeraw(file, intf, argv[1]);
 	}
 	else if (!strcmp(argv[0], "readraw")) {
 		if (argc < 2) {
 			lprintf(LOG_NOTICE, "usage: sel readraw <filename>");
 			return 0;
 		}
-		rc = ipmi_sel_readraw(intf, argv[1]);
+		rc = ipmi_sel_readraw(file, intf, argv[1]);
 	}
 	else if (!strcmp(argv[0], "ereadraw")) {
 		if (argc < 2) {
@@ -3059,7 +3071,7 @@ int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
 			return 0;
 		}
 		sel_extended = 1;
-		rc = ipmi_sel_readraw(intf, argv[1]);
+		rc = ipmi_sel_readraw(file, intf, argv[1]);
 	}
 	else if (!strcmp(argv[0], "list")
 	         || !strcmp(argv[0], "elist"))
@@ -3103,7 +3115,7 @@ int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
 		}
 		count *= sign;
 
-		rc = ipmi_sel_list_entries(intf,count);
+		rc = ipmi_sel_list_entries(file, intf,count);
 	}
 	else if (!strcmp(argv[0], "clear"))
 		rc = ipmi_sel_clear(intf);
@@ -3117,7 +3129,7 @@ int ipmi_sel_main(struct ipmi_intf * intf, int argc, char ** argv)
 		if (argc < 2)
 			lprintf(LOG_ERR, "usage: sel get <entry>");
 		else
-			rc = ipmi_sel_show_entry(intf, argc-1, &argv[1]);
+			rc = ipmi_sel_show_entry(file, intf, argc-1, &argv[1]);
 	}
 	else if (!strcmp(argv[0], "time")) {
 		if (argc < 2)

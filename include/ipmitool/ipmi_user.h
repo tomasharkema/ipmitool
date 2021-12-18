@@ -71,7 +71,7 @@ struct user_name_t {
 	uint8_t user_name[17];
 };
 
-int ipmi_user_main(struct ipmi_intf *, int, char **);
+int ipmi_user_main(FILE *file, struct ipmi_intf *, int, char **);
 int _ipmi_get_user_access(struct ipmi_intf *intf,
 		struct user_access_t *user_access_rsp);
 int _ipmi_get_user_name(struct ipmi_intf *intf, struct user_name_t *user_name);

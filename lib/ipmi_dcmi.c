@@ -64,7 +64,7 @@
 
 extern int verbose;
 extern int csv_output;
-static int ipmi_print_sensor_info(struct ipmi_intf *intf, uint16_t rec_id);
+static int ipmi_print_sensor_info(FILE *file, struct ipmi_intf *intf, uint16_t rec_id);
 
 /*******************************************************************************
  * The structs below are the DCMI command option strings.  They are printed    *
@@ -1349,7 +1349,7 @@ ipmi_dcmi_discvry_snsr(struct ipmi_intf * intf, uint8_t isnsr, uint8_t offset)
  * @ient:   sensor entity id
  */
 static int
-ipmi_dcmi_prnt_discvry_snsr(struct ipmi_intf * intf, uint8_t isnsr)
+ipmi_dcmi_prnt_discvry_snsr(FILE *file, struct ipmi_intf * intf, uint8_t isnsr)
 {
 	int i = 0;
 	struct ipmi_rs * rsp; /* ipmi response */
@@ -1381,7 +1381,7 @@ ipmi_dcmi_prnt_discvry_snsr(struct ipmi_intf * intf, uint8_t isnsr)
 			/* Record ID is in little endian format */
 			record_id = (id_buff[2*i + 1] << 8) + id_buff[2*i];
 			printf("Record ID 0x%04x: ", record_id);
-			ipmi_print_sensor_info(intf, record_id);
+			ipmi_print_sensor_info(file, intf, record_id);
 		}
 		offset += 8;
 		instances -= records;
@@ -2498,7 +2498,7 @@ _ipmi_nm_set_suspend(struct ipmi_intf * intf, struct nm_suspend *suspend)
 }
 
 static int
-ipmi_nm_getcapabilities(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_getcapabilities(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	uint8_t option;
 	uint8_t domain = 0;  /* default domain of platform */
@@ -2542,7 +2542,7 @@ ipmi_nm_getcapabilities(struct ipmi_intf * intf, int argc, char **argv)
 	if (_ipmi_nm_getcapabilities(intf, domain, trigger, &caps))
 		return -1;
 	if (csv_output) {
-		printf("%d,%u,%u,%u,%u,%u,%u,%s\n",
+		fprintf(file, "%d,%u,%u,%u,%u,%u,%u,%s\n",
 		       caps.max_settings, caps.max_value,caps.min_value,
 		       caps.min_corr/1000, caps.max_corr/1000,
 		       caps.min_stats, caps.max_stats,
@@ -2577,7 +2577,7 @@ ipmi_nm_getcapabilities(struct ipmi_intf * intf, int argc, char **argv)
 }
 
 static int
-ipmi_nm_get_policy(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_get_policy(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	uint8_t option;
 	uint8_t domain = 0; /* default domain of platform */
@@ -2623,7 +2623,7 @@ ipmi_nm_get_policy(struct ipmi_intf * intf, int argc, char **argv)
 	if (_ipmi_nm_get_policy(intf, policy.domain, policy_id, &policy))
 		return -1;
 	if (csv_output) {
-		printf("%s,0x%x,%s,%s,%s,%u,%u,%u,%u,%s\n",
+		fprintf(file, "%s,0x%x,%s,%s,%s,%u,%u,%u,%u,%s\n",
 		       val2str2(policy.domain&0xF, nm_domain_vals),
 		       policy.domain,
 		       (policy.policy_type & 0x10) ? "power" : "nopower ",
@@ -2668,7 +2668,7 @@ ipmi_nm_get_policy(struct ipmi_intf * intf, int argc, char **argv)
 }
 
 static int
-ipmi_nm_policy(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_policy(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	uint8_t action;
 	uint8_t option;
@@ -2690,7 +2690,7 @@ ipmi_nm_policy(struct ipmi_intf * intf, int argc, char **argv)
 		return -1;
 	}
 	if (action == 0) /* get */
-		return (ipmi_nm_get_policy(intf, argc, argv));
+		return (ipmi_nm_get_policy(file, intf, argc, argv));
 	memset(&policy, 0, sizeof(policy));
 	/*
 	 * nm policy add [domain <param>] enable|disable  policy_id <param>
@@ -2863,7 +2863,7 @@ ipmi_nm_control(struct ipmi_intf * intf, int argc, char **argv)
 }
 
 static int
-ipmi_nm_get_statistics(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_get_statistics(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	uint8_t mode = 0;
 	uint8_t option;
@@ -2935,7 +2935,7 @@ ipmi_nm_get_statistics(struct ipmi_intf * intf, int argc, char **argv)
 	if (_ipmi_nm_statistics(intf, mode, domain, policy_id, &stats))
 		return -1;
 	if (csv_output) {
-		printf("%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%d\n",
+		fprintf(file, "%s,%s,%s,%s,%s,%d,%d,%d,%d,%s,%d\n",
 		       val2str2(stats.id_state & 0xF, nm_domain_vals),
 		       ((stats.id_state >> 4) & 1) ? (policy_mode ? "Policy Enabled"
 		                                                  : "Globally Enabled")
@@ -3088,7 +3088,7 @@ ipmi_nm_set_range(struct ipmi_intf * intf, int argc, char **argv)
 }
 
 static int
-ipmi_nm_get_alert(struct ipmi_intf * intf)
+ipmi_nm_get_alert(FILE *file, struct ipmi_intf * intf)
 {
 	struct nm_set_alert alert;
 
@@ -3096,7 +3096,7 @@ ipmi_nm_get_alert(struct ipmi_intf * intf)
 	if (_ipmi_nm_get_alert(intf, &alert))
 		return -1;
 	if (csv_output) {
-		printf("%d,%s,0x%x,%s,0x%x\n",
+		fprintf(file, "%d,%s,0x%x,%s,0x%x\n",
 		       alert.chan & 0xF,
 		       (alert.chan >> 7) ? "not registered"
 		                         : "registered",
@@ -3120,7 +3120,7 @@ ipmi_nm_get_alert(struct ipmi_intf * intf)
 }
 
 static int
-ipmi_nm_alert(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_alert(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	uint8_t param;
 	uint8_t action;
@@ -3138,7 +3138,7 @@ ipmi_nm_alert(struct ipmi_intf * intf, int argc, char **argv)
 		return -1;
 	}
 	if (action == 0x02) /* get */
-		return (ipmi_nm_get_alert(intf));
+		return (ipmi_nm_get_alert(file, intf));
 	/* set */
 	memset(&alert, 0, sizeof(alert));
 	while (--argc) {
@@ -3684,7 +3684,7 @@ ipmi_dcmi_thermalpolicy(struct ipmi_intf * intf, int argc, char **argv)
  * @argv:   argument vector
  */
 int
-ipmi_dcmi_main(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_dcmi_main(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	int rc = 0;
 	int i;
@@ -3727,7 +3727,7 @@ ipmi_dcmi_main(struct ipmi_intf * intf, int argc, char **argv)
 		 */
 		for (i = 0; dcmi_discvry_snsr_vals[i].str; i++) {
 			/* get all of the information about this sensor */
-			rc = ipmi_dcmi_prnt_discvry_snsr(intf,
+			rc = ipmi_dcmi_prnt_discvry_snsr(file, intf,
 			                                 dcmi_discvry_snsr_vals[i].val);
 		}
 		break;
@@ -3869,7 +3869,7 @@ ipmi_dcmi_main(struct ipmi_intf * intf, int argc, char **argv)
  * @argv:   argument vector
  */
 int
-ipmi_nm_main(struct ipmi_intf * intf, int argc, char **argv)
+ipmi_nm_main(FILE *file, struct ipmi_intf * intf, int argc, char **argv)
 {
 	struct nm_discover disc;
 
@@ -3891,7 +3891,7 @@ ipmi_nm_main(struct ipmi_intf * intf, int argc, char **argv)
 		break;
 	/* capability */
 	case 0x01:
-		if (ipmi_nm_getcapabilities(intf, argc, argv))
+		if (ipmi_nm_getcapabilities(file, intf, argc, argv))
 			return -1;
 		break;
 	/*  policy control enable-disable */
@@ -3901,12 +3901,12 @@ ipmi_nm_main(struct ipmi_intf * intf, int argc, char **argv)
 		break;
 	/* policy */
 	case 0x03:
-		if (ipmi_nm_policy(intf, argc, argv))
+		if (ipmi_nm_policy(file, intf, argc, argv))
 			return -1;
 		break;
 	/* Get statistics */
 	case 0x04:
-		if (ipmi_nm_get_statistics(intf, argc, argv))
+		if (ipmi_nm_get_statistics(file, intf, argc, argv))
 			return -1;
 		break;
 	/* set power draw range */
@@ -3926,7 +3926,7 @@ ipmi_nm_main(struct ipmi_intf * intf, int argc, char **argv)
 		break;
 	/* set/get alert destination */
 	case 0x08:
-		if (ipmi_nm_alert(intf, argc, argv))
+		if (ipmi_nm_alert(file, intf, argc, argv))
 			return -1;
 		break;
 	/* set/get alert thresholds */
@@ -3950,7 +3950,7 @@ ipmi_nm_main(struct ipmi_intf * intf, int argc, char **argv)
  * @rec_id: target Record ID
  */
 static int
-ipmi_print_sensor_info(struct ipmi_intf *intf, uint16_t rec_id)
+ipmi_print_sensor_info(FILE *file, struct ipmi_intf *intf, uint16_t rec_id)
 {
 	struct sdr_get_rs *header;
 	struct ipmi_sdr_iterator *itr;
@@ -3983,7 +3983,7 @@ ipmi_print_sensor_info(struct ipmi_intf *intf, uint16_t rec_id)
 	if ((header->type == SDR_RECORD_TYPE_FULL_SENSOR) ||
 	    (header->type == SDR_RECORD_TYPE_COMPACT_SENSOR))
 	{
-		rc = ipmi_sdr_print_rawentry(intf, header->type,
+		rc = ipmi_sdr_print_rawentry(file, intf, header->type,
 		                             rec, header->length);
 	} else {
 		rc = (-1);

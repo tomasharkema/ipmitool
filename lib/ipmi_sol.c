@@ -569,7 +569,7 @@ ipmi_get_sol_info(
  * ipmi_print_sol_info
  */
 static int
-ipmi_print_sol_info(struct ipmi_intf * intf, uint8_t channel)
+ipmi_print_sol_info(FILE *file, struct ipmi_intf * intf, uint8_t channel)
 {
 	struct sol_config_parameters params = {0};
 	if (ipmi_get_sol_info(intf, channel, &params))
@@ -577,27 +577,27 @@ ipmi_print_sol_info(struct ipmi_intf * intf, uint8_t channel)
 
 	if (csv_output)
 	{
-		printf("%s,",
+        fprintf(file,"%s,",
 			   val2str(params.set_in_progress & 0x03,
 					   ipmi_set_in_progress_vals));
-		printf("%s,", params.enabled?"true": "false");
-		printf("%s,", params.force_encryption?"true":"false");
-		printf("%s,", params.force_encryption?"true":"false");
-		printf("%s,",
+        fprintf(file,"%s,", params.enabled?"true": "false");
+        fprintf(file,"%s,", params.force_encryption?"true":"false");
+        fprintf(file,"%s,", params.force_encryption?"true":"false");
+        fprintf(file,"%s,",
 			   val2str(params.privilege_level, ipmi_privlvl_vals));
-		printf("%d,", params.character_accumulate_level * 5);
-		printf("%d,", params.character_send_threshold);
-		printf("%d,", params.retry_count);
-		printf("%d,", params.retry_interval * 10);
+        fprintf(file,"%d,", params.character_accumulate_level * 5);
+        fprintf(file,"%d,", params.character_send_threshold);
+        fprintf(file,"%d,", params.retry_count);
+        fprintf(file,"%d,", params.retry_interval * 10);
 
-		printf("%s,",
+        fprintf(file,"%s,",
 			   val2str(params.volatile_bit_rate, ipmi_bit_rate_vals));
 
-		printf("%s,",
+        fprintf(file,"%s,",
 			   val2str(params.non_volatile_bit_rate, ipmi_bit_rate_vals));
 
-		printf("%d,", params.payload_channel);
-		printf("%d\n", params.payload_port);
+        fprintf(file,"%d,", params.payload_channel);
+        fprintf(file,"%d\n", params.payload_port);
 	}
 	else
 	{
@@ -1905,7 +1905,7 @@ print_sol_set_usage(void)
 
 /* ipmi_sol_main */
 int
-ipmi_sol_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_sol_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int retval = 0;
 	const char *instance_kw = "instance=";
@@ -1928,7 +1928,7 @@ ipmi_sol_main(struct ipmi_intf * intf, int argc, char ** argv)
 			print_sol_usage();
 			return -1;
 		}
-		retval = ipmi_print_sol_info(intf, channel);
+		retval = ipmi_print_sol_info(file, intf, channel);
 	} else if (!strcmp(argv[0], "payload")) {
 		/* Payload enable or disable */
 		uint8_t channel = 0xe;

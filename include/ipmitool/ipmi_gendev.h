@@ -42,4 +42,4 @@
 #include <ipmitool/ipmi.h>
 #include <ipmitool/ipmi_entity.h>
 
-int ipmi_gendev_main(struct ipmi_intf *, int, char **);
+int ipmi_gendev_main(FILE *file, struct ipmi_intf *, int, char **);

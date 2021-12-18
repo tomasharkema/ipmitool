@@ -670,11 +670,11 @@ static const struct ipmi_event_sensor_types oem_kontron_event_types[] = {
     { 0x00, 0x00, 0xff, NULL },
 };
 
-int ipmi_sel_main(struct ipmi_intf *, int, char **);
-void ipmi_sel_print_std_entry(struct ipmi_intf * intf, struct sel_event_record * evt);
-void ipmi_sel_print_std_entry_verbose(struct ipmi_intf * intf, struct sel_event_record * evt);
-void ipmi_sel_print_extended_entry(struct ipmi_intf * intf, struct sel_event_record * evt);
-void ipmi_sel_print_extended_entry_verbose(struct ipmi_intf * intf, struct sel_event_record * evt);
+int ipmi_sel_main(FILE *file, struct ipmi_intf *, int, char **);
+void ipmi_sel_print_std_entry(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt);
+void ipmi_sel_print_std_entry_verbose(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt);
+void ipmi_sel_print_extended_entry(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt);
+void ipmi_sel_print_extended_entry_verbose(FILE *file, struct ipmi_intf * intf, struct sel_event_record * evt);
 void ipmi_get_event_desc(struct ipmi_intf * intf, struct sel_event_record * rec, char ** desc);
 const char * ipmi_get_sensor_type(struct ipmi_intf *intf, uint8_t code);
 uint16_t ipmi_sel_get_std_entry(struct ipmi_intf * intf, uint16_t id, struct sel_event_record * evt);

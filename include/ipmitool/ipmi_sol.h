@@ -97,7 +97,7 @@ int ipmi_sol_set_param_isvalid_uint8_t(const char *strval,
 				       uint8_t maxval,
 				       uint8_t *out_value);
 
-int ipmi_sol_main(struct ipmi_intf *, int, char **);
+int ipmi_sol_main(FILE *file, struct ipmi_intf *, int, char **);
 int ipmi_get_sol_info(struct ipmi_intf *intf,
 		      uint8_t channel,
 		      struct sol_config_parameters *params);

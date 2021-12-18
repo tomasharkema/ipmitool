@@ -51,4 +51,4 @@ struct isol_config_parameters {
 	uint8_t  bit_rate;
 };
 
-int ipmi_isol_main(struct ipmi_intf *, int, char **);
+int ipmi_isol_main(FILE *file, struct ipmi_intf *, int, char **);

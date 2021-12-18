@@ -87,4 +87,4 @@ typedef enum {
 /* See Figure 29-2, Table 32-1 */
 #define EVENT_GENERATOR(base, index) (EVENT_SWID(base,index) << 1 | 1)
 
-int  ipmi_event_main(struct ipmi_intf *, int, char **);
+int  ipmi_event_main(FILE *file, struct ipmi_intf *, int, char **);

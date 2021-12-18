@@ -66,4 +66,4 @@ typedef enum {
 	SUNOEM_EC_BMC_CCODE_NONZERO  = 3
 } sunoem_ec_t;
 
-int ipmi_sunoem_main(struct ipmi_intf *, int, char **);
+int ipmi_sunoem_main(FILE *file, struct ipmi_intf *, int, char **);

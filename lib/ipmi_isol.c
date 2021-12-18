@@ -141,7 +141,7 @@ static int ipmi_get_isol_info(struct ipmi_intf * intf,
 	return 0;
 }
 
-static int ipmi_print_isol_info(struct ipmi_intf * intf)
+static int ipmi_print_isol_info(FILE *file, struct ipmi_intf * intf)
 {
 	struct isol_config_parameters params = {0};
 	if (ipmi_get_isol_info(intf, &params))
@@ -149,10 +149,10 @@ static int ipmi_print_isol_info(struct ipmi_intf * intf)
 
 	if (csv_output)
 	{
-		printf("%s,", (params.enabled & 0x1)?"true": "false");
-		printf("%s,",
+		fprintf(file, "%s,", (params.enabled & 0x1)?"true": "false");
+		fprintf(file, "%s,",
 			   val2str((params.privilege_level & 0xf), ipmi_privlvl_vals));
-		printf("%s,",
+		fprintf(file, "%s,",
 			   val2str((params.bit_rate & 0xf), ipmi_bit_rate_vals));
 	}
 	else
@@ -783,7 +783,7 @@ static void print_isol_usage(void) {
 	lprintf(LOG_NOTICE, "               activate");
 }
 
-int ipmi_isol_main(struct ipmi_intf * intf, int argc, char ** argv)
+int ipmi_isol_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int ret = 0;
 
@@ -797,7 +797,7 @@ int ipmi_isol_main(struct ipmi_intf * intf, int argc, char ** argv)
 	 * Info
 	 */
 	else if (!strcmp(argv[0], "info")) {
-		ret = ipmi_print_isol_info(intf);
+		ret = ipmi_print_isol_info(file, intf);
 	}
 
 	/*

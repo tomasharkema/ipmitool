@@ -249,17 +249,17 @@ dump_user_access(const char *user_name,
 
 
 static void
-dump_user_access_csv(const char *user_name,
+dump_user_access_csv(FILE *file, const char *user_name,
 		struct user_access_t *user_access)
 {
-	printf("%d,%s,%s,%s,%s,%s\n",
-			user_access->user_id,
-			user_name,
-			user_access->callin_callback? "false": "true",
-			user_access->link_auth? "true": "false",
-			user_access->ipmi_messaging? "true": "false",
-			val2str(user_access->privilege_limit,
-				ipmi_privlvl_vals));
+    fprintf(file, "%d,%s,%s,%s,%s,%s\n",
+            user_access->user_id,
+            user_name,
+            user_access->callin_callback? "false": "true",
+            user_access->link_auth? "true": "false",
+            user_access->ipmi_messaging? "true": "false",
+            val2str(user_access->privilege_limit,
+                    ipmi_privlvl_vals));
 }
 
 /* ipmi_print_user_list - List IPMI Users and their ACLs for given channel.
@@ -270,7 +270,7 @@ dump_user_access_csv(const char *user_name,
  * returns - 0 on success, (-1) on error
  */
 static int
-ipmi_print_user_list(struct ipmi_intf *intf, uint8_t channel_number)
+ipmi_print_user_list(FILE *file, struct ipmi_intf *intf, uint8_t channel_number)
 {
 	struct user_access_t user_access = {0};
 	struct user_name_t user_name = {0};
@@ -294,7 +294,7 @@ ipmi_print_user_list(struct ipmi_intf *intf, uint8_t channel_number)
 			return (-1);
 		}
 		if (csv_output) {
-			dump_user_access_csv((char *)user_name.user_name,
+			dump_user_access_csv(file, (char *)user_name.user_name,
 					&user_access);
 		} else {
 			dump_user_access((char *)user_name.user_name,
@@ -314,7 +314,7 @@ ipmi_print_user_list(struct ipmi_intf *intf, uint8_t channel_number)
  * returns - 0 on success, (-1) on error
  */
 static int
-ipmi_print_user_summary(struct ipmi_intf *intf, uint8_t channel_number)
+ipmi_print_user_summary(FILE *file, struct ipmi_intf *intf, uint8_t channel_number)
 {
 	struct user_access_t user_access = {0};
 	int ccode = 0;
@@ -325,7 +325,7 @@ ipmi_print_user_summary(struct ipmi_intf *intf, uint8_t channel_number)
 		return (-1);
 	}
 	if (csv_output) {
-		printf("%" PRIu8 ",%" PRIu8 ",%" PRIu8 "\n",
+        fprintf(file, "%" PRIu8 ",%" PRIu8 ",%" PRIu8 "\n",
 				user_access.max_user_ids,
 				user_access.enabled_user_ids,
 				user_access.fixed_user_ids);
@@ -490,7 +490,7 @@ ask_password(uint8_t user_id)
 }
 
 int
-ipmi_user_summary(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_user_summary(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	/* Summary*/
 	uint8_t channel;
@@ -504,11 +504,11 @@ ipmi_user_summary(struct ipmi_intf *intf, int argc, char **argv)
 		print_user_usage();
 		return (-1);
 	}
-	return ipmi_print_user_summary(intf, channel);
+	return ipmi_print_user_summary(file, intf, channel);
 }
 
 int
-ipmi_user_list(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_user_list(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	/* List */
 	uint8_t channel;
@@ -522,7 +522,7 @@ ipmi_user_list(struct ipmi_intf *intf, int argc, char **argv)
 		print_user_usage();
 		return (-1);
 	}
-	return ipmi_print_user_list(intf, channel);
+	return ipmi_print_user_list(file, intf, channel);
 }
 
 int
@@ -733,7 +733,7 @@ ipmi_user_name(struct ipmi_intf *intf, int argc, char **argv)
  * specific to this subcommand
  */
 int
-ipmi_user_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_user_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	if (argc == 0) {
 		lprintf(LOG_ERR, "Not enough parameters given.");
@@ -745,9 +745,9 @@ ipmi_user_main(struct ipmi_intf *intf, int argc, char **argv)
 		print_user_usage();
 		return 0;
 	} else if (!strcmp(argv[0], "summary")) {
-		return ipmi_user_summary(intf, argc, argv);
+		return ipmi_user_summary(file, intf, argc, argv);
 	} else if (!strcmp(argv[0], "list")) {
-		return ipmi_user_list(intf, argc, argv);
+		return ipmi_user_list(file, intf, argc, argv);
 	} else if (!strcmp(argv[0], "test")) {
 		return ipmi_user_test(intf, argc, argv);
 	} else if (!strcmp(argv[0], "set")) {

@@ -62,7 +62,7 @@ is_system(const struct channel_info_t *chinfo)
 }
 
 static void
-ipmi_event_msg_print(struct ipmi_intf * intf, struct platform_event_msg * pmsg)
+ipmi_event_msg_print(FILE *file, struct ipmi_intf * intf, struct platform_event_msg * pmsg)
 {
 	struct sel_event_record sel_event;
 
@@ -82,13 +82,13 @@ ipmi_event_msg_print(struct ipmi_intf * intf, struct platform_event_msg * pmsg)
 	sel_event.sel_type.standard_type.event_data[2]  = pmsg->event_data[2];
 
 	if (verbose)
-		ipmi_sel_print_extended_entry_verbose(intf, &sel_event);
+		ipmi_sel_print_extended_entry_verbose(file, intf, &sel_event);
 	else
-		ipmi_sel_print_extended_entry(intf, &sel_event);
+		ipmi_sel_print_extended_entry(file, intf, &sel_event);
 }
 
 static int
-ipmi_send_platform_event(struct ipmi_intf * intf, struct platform_event_msg * emsg)
+ipmi_send_platform_event(FILE *file, struct ipmi_intf * intf, struct platform_event_msg * emsg)
 {
 	struct ipmi_rs * rsp;
 	struct ipmi_rq req;
@@ -120,7 +120,7 @@ ipmi_send_platform_event(struct ipmi_intf * intf, struct platform_event_msg * em
 
 	memcpy(rqdata_start, emsg, sizeof(struct platform_event_msg));
 
-	ipmi_event_msg_print(intf, emsg);
+	ipmi_event_msg_print(file, intf, emsg);
 
 	rsp = intf->sendrecv(intf, &req);
 	if (!rsp) {
@@ -169,7 +169,7 @@ static const struct valstr ipmi_event_thresh_hi[] = {
 };
 
 static int
-ipmi_send_platform_event_num(struct ipmi_intf * intf, int num)
+ipmi_send_platform_event_num(FILE *file, struct ipmi_intf * intf, int num)
 {
 	struct platform_event_msg emsg;
 
@@ -217,7 +217,7 @@ ipmi_send_platform_event_num(struct ipmi_intf * intf, int num)
 		return -1;
 	}
 
-	return ipmi_send_platform_event(intf, &emsg);
+	return ipmi_send_platform_event(file, intf, &emsg);
 }
 
 static int
@@ -242,9 +242,9 @@ ipmi_event_find_offset(struct ipmi_intf *intf, uint8_t sensor_type, uint8_t even
 }
 
 static void
-print_sensor_states(struct ipmi_intf *intf, uint8_t sensor_type, uint8_t event_type)
+print_sensor_states(FILE *file, struct ipmi_intf *intf, uint8_t sensor_type, uint8_t event_type)
 {
-	ipmi_sdr_print_discrete_state_mini(intf,
+	ipmi_sdr_print_discrete_state_mini(file, intf,
 			"Sensor States: \n  ", "\n  ", sensor_type,
 			event_type, 0xff, 0xff);
 	printf("\n");
@@ -252,7 +252,7 @@ print_sensor_states(struct ipmi_intf *intf, uint8_t sensor_type, uint8_t event_t
 
 
 static int
-ipmi_event_fromsensor(struct ipmi_intf * intf, char * id, char * state, char * evdir)
+ipmi_event_fromsensor(FILE *file, struct ipmi_intf * intf, char * id, char * state, char * evdir)
 {
 	struct ipmi_rs * rsp;
 	struct sdr_record_list * sdr;
@@ -416,7 +416,7 @@ ipmi_event_fromsensor(struct ipmi_intf * intf, char * id, char * state, char * e
 		 * print list of available states for this sensor
 		 */
 		if (!state || strcasecmp(state, "list") == 0) {
-			print_sensor_states(intf, emsg.sensor_type, emsg.event_type);
+			print_sensor_states(file, intf, emsg.sensor_type, emsg.event_type);
 			printf("Sensor State Shortcuts:\n");
 			for (x = 0; x < sizeof(digi_on)/sizeof(*digi_on); x++) {
 				printf("  %-9s  %-9s\n", digi_on[x], digi_off[x]);
@@ -456,7 +456,7 @@ ipmi_event_fromsensor(struct ipmi_intf * intf, char * id, char * state, char * e
 		 * print list of available states for this sensor
 		 */
 		if (!state || strcasecmp(state, "list") == 0) {
-			print_sensor_states(intf, emsg.sensor_type, emsg.event_type);
+			print_sensor_states(file, intf, emsg.sensor_type, emsg.event_type);
 			return 0;
 		}
 		off = ipmi_event_find_offset(intf,
@@ -476,7 +476,7 @@ ipmi_event_fromsensor(struct ipmi_intf * intf, char * id, char * state, char * e
 		 * print list of available states for this sensor
 		 */
 		if (!state || strcasecmp(state, "list") == 0) {
-			print_sensor_states(intf, emsg.sensor_type, emsg.event_type);
+			print_sensor_states(file, intf, emsg.sensor_type, emsg.event_type);
 			return 0;
 		}
 		off = ipmi_event_find_offset(intf,
@@ -492,7 +492,7 @@ ipmi_event_fromsensor(struct ipmi_intf * intf, char * id, char * state, char * e
 
 	}
 
-	return ipmi_send_platform_event(intf, &emsg);
+	return ipmi_send_platform_event(file, intf, &emsg);
 }
 
 static int
@@ -561,7 +561,7 @@ ipmi_event_fromfile(struct ipmi_intf * intf, char * file)
 		}
 
 		/* Now actually send it, failures will be logged by the sender */
-		rc = ipmi_send_platform_event(intf, &rqdata.emsg);
+		rc = ipmi_send_platform_event(file, intf, &rqdata.emsg);
 		if (IPMI_CC_OK != rc)
 			break;
 	}
@@ -592,7 +592,7 @@ ipmi_event_usage(void)
 }
 
 int
-ipmi_event_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_event_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 
@@ -609,17 +609,17 @@ ipmi_event_main(struct ipmi_intf * intf, int argc, char ** argv)
 	}
 	if (strlen(argv[0]) == 1) {
 		switch (argv[0][0]) {
-		case '1': return ipmi_send_platform_event_num(intf, 1);
-		case '2': return ipmi_send_platform_event_num(intf, 2);
-		case '3': return ipmi_send_platform_event_num(intf, 3);
+		case '1': return ipmi_send_platform_event_num(file, intf, 1);
+		case '2': return ipmi_send_platform_event_num(file, intf, 2);
+		case '3': return ipmi_send_platform_event_num(file, intf, 3);
 		}
 	}
 	if (argc < 2)
-		rc = ipmi_event_fromsensor(intf, argv[0], NULL, NULL);
+		rc = ipmi_event_fromsensor(file, intf, argv[0], NULL, NULL);
 	else if (argc < 3)
-		rc = ipmi_event_fromsensor(intf, argv[0], argv[1], NULL);
+		rc = ipmi_event_fromsensor(file, intf, argv[0], argv[1], NULL);
 	else
-		rc = ipmi_event_fromsensor(intf, argv[0], argv[1], argv[2]);
+		rc = ipmi_event_fromsensor(file, intf, argv[0], argv[1], argv[2]);
 
 	return rc;
 }

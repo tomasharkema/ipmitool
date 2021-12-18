@@ -241,61 +241,62 @@ ipmi_sensor_print_fc_discrete(struct ipmi_intf *intf,
 }
 
 static void
-print_thresh_setting(struct sdr_record_full_sensor *full,
+print_thresh_setting(FILE *file, struct sdr_record_full_sensor *full,
 			 uint8_t thresh_is_avail, uint8_t setting,
 			 const char *field_sep,
 			 const char *analog_fmt,
 			 const char *discrete_fmt,
 			 const char *na_fmt)
 {
-	printf("%s", field_sep);
+    fprintf(file,"%s", field_sep);
 	if (!thresh_is_avail) {
-		printf(na_fmt, "na");
+        fprintf(file,na_fmt, "na");
 		return;
 	}
 	if (full && !UNITS_ARE_DISCRETE(&full->cmn)) {
-		printf(analog_fmt, sdr_convert_sensor_reading (full, setting));
+        fprintf(file,analog_fmt, sdr_convert_sensor_reading (full, setting));
 	} else {
-		printf(discrete_fmt, setting);
+        fprintf(file,discrete_fmt, setting);
 	}
 }
 
 static void
 dump_sensor_fc_thredshold_csv(
+        FILE *file,
 	int thresh_available,
 	const char *thresh_status,
 	struct ipmi_rs *rsp,
 	struct sensor_reading *sr)
 {
-	printf("%s", sr->s_id);
+    fprintf(file,"%s", sr->s_id);
 	if (sr->s_reading_valid) {
 		if (sr->s_has_analog_value)
-			printf(",%.3f,%s,%s",
+            fprintf(file,",%.3f,%s,%s",
 			       sr->s_a_val, sr->s_a_units, thresh_status);
 		else
-			printf(",0x%x,%s,%s",
+            fprintf(file,",0x%x,%s,%s",
 			       sr->s_reading, sr->s_a_units, thresh_status);
 	} else {
-		printf(",%s,%s,%s",
+        fprintf(file,",%s,%s,%s",
 		       "na", sr->s_a_units, "na");
 	}
 	if (thresh_available && sr->full) {
-#define PTS(bit, dataidx) { \
-print_thresh_setting(sr->full, rsp->data[0] & (bit), \
+#define PTS(file, bit, dataidx) { \
+print_thresh_setting(file, sr->full, rsp->data[0] & (bit), \
 rsp->data[(dataidx)], ",", "%.3f", "0x%x", "%s"); \
 }
-		PTS(LOWER_NON_RECOV_SPECIFIED, 3);
-		PTS(LOWER_CRIT_SPECIFIED, 2);
-		PTS(LOWER_NON_CRIT_SPECIFIED, 1);
-		PTS(UPPER_NON_CRIT_SPECIFIED, 4);
-		PTS(UPPER_CRIT_SPECIFIED, 5);
-		PTS(UPPER_NON_RECOV_SPECIFIED, 6);
+		PTS(file, LOWER_NON_RECOV_SPECIFIED, 3);
+		PTS(file, LOWER_CRIT_SPECIFIED, 2);
+		PTS(file, LOWER_NON_CRIT_SPECIFIED, 1);
+		PTS(file, UPPER_NON_CRIT_SPECIFIED, 4);
+		PTS(file, UPPER_CRIT_SPECIFIED, 5);
+		PTS(file, UPPER_NON_RECOV_SPECIFIED, 6);
 #undef PTS
 	} else {
-		printf(",%s,%s,%s,%s,%s,%s",
+        fprintf(file,",%s,%s,%s,%s,%s,%s",
 		       "na", "na", "na", "na", "na", "na");
 	}
-	printf("\n");
+    fprintf(file,"\n");
 }
 
 /* output format
@@ -303,6 +304,7 @@ rsp->data[(dataidx)], ",", "%.3f", "0x%x", "%s"); \
  */
 static void
 dump_sensor_fc_thredshold(
+        FILE *file,
 	int thresh_available,
 	const char *thresh_status,
 	struct ipmi_rs *rsp,
@@ -321,16 +323,16 @@ dump_sensor_fc_thredshold(
 		       "na", sr->s_a_units, "na");
 	}
 	if (thresh_available && sr->full) {
-#define PTS(bit, dataidx) { \
-print_thresh_setting(sr->full, rsp->data[0] & (bit), \
+#define PTS(file, bit, dataidx) { \
+print_thresh_setting(file, sr->full, rsp->data[0] & (bit), \
 rsp->data[(dataidx)], "| ", "%-10.3f", "0x%-8x", "%-10s"); \
 }
-		PTS(LOWER_NON_RECOV_SPECIFIED, 3);
-		PTS(LOWER_CRIT_SPECIFIED, 2);
-		PTS(LOWER_NON_CRIT_SPECIFIED, 1);
-		PTS(UPPER_NON_CRIT_SPECIFIED, 4);
-		PTS(UPPER_CRIT_SPECIFIED, 5);
-		PTS(UPPER_NON_RECOV_SPECIFIED, 6);
+		PTS(file, LOWER_NON_RECOV_SPECIFIED, 3);
+		PTS(file, LOWER_CRIT_SPECIFIED, 2);
+		PTS(file, LOWER_NON_CRIT_SPECIFIED, 1);
+		PTS(file, UPPER_NON_CRIT_SPECIFIED, 4);
+		PTS(file, UPPER_CRIT_SPECIFIED, 5);
+		PTS(file, UPPER_NON_RECOV_SPECIFIED, 6);
 #undef PTS
 	} else {
 		printf("| %-10s| %-10s| %-10s| %-10s| %-10s| %-10s",
@@ -342,6 +344,7 @@ rsp->data[(dataidx)], "| ", "%-10.3f", "0x%-8x", "%-10s"); \
 
 static void
 dump_sensor_fc_thredshold_verbose(
+        FILE *file,
 	int thresh_available,
 	const char *thresh_status,
 	struct ipmi_intf *intf,
@@ -386,17 +389,17 @@ dump_sensor_fc_thredshold_verbose(
 
 		if (thresh_available) {
 			if (sr->full) {
-#define PTS(bit, dataidx, str) { \
-print_thresh_setting(sr->full, rsp->data[0] & (bit), \
+#define PTS(file, bit, dataidx, str) { \
+print_thresh_setting(file, sr->full, rsp->data[0] & (bit), \
 	 rsp->data[(dataidx)], \
 	 (str), "%.3f\n", "0x%x\n", "%s\n"); \
 }
-				PTS(LOWER_NON_RECOV_SPECIFIED, 3, " Lower Non-Recoverable : ");
-				PTS(LOWER_CRIT_SPECIFIED, 2, " Lower Critical        : ");
-				PTS(LOWER_NON_CRIT_SPECIFIED, 1, " Lower Non-Critical    : ");
-				PTS(UPPER_NON_CRIT_SPECIFIED, 4, " Upper Non-Critical    : ");
-				PTS(UPPER_CRIT_SPECIFIED, 5, " Upper Critical        : ");
-				PTS(UPPER_NON_RECOV_SPECIFIED, 6, " Upper Non-Recoverable : ");
+				PTS(file, LOWER_NON_RECOV_SPECIFIED, 3, " Lower Non-Recoverable : ");
+				PTS(file, LOWER_CRIT_SPECIFIED, 2, " Lower Critical        : ");
+				PTS(file, LOWER_NON_CRIT_SPECIFIED, 1, " Lower Non-Critical    : ");
+				PTS(file, UPPER_NON_CRIT_SPECIFIED, 4, " Upper Non-Critical    : ");
+				PTS(file, UPPER_CRIT_SPECIFIED, 5, " Upper Critical        : ");
+				PTS(file, UPPER_NON_RECOV_SPECIFIED, 6, " Upper Non-Recoverable : ");
 #undef PTS
 
 			}
@@ -439,7 +442,7 @@ print_thresh_setting(sr->full, rsp->data[0] & (bit), \
 }
 
 static int
-ipmi_sensor_print_fc_threshold(struct ipmi_intf *intf,
+ipmi_sensor_print_fc_threshold(FILE *file, struct ipmi_intf *intf,
 			      struct sdr_record_common_sensor *sensor,
 			      uint8_t sdr_record_type)
 {
@@ -466,12 +469,12 @@ ipmi_sensor_print_fc_threshold(struct ipmi_intf *intf,
 		thresh_available = 0;
 
 	if (csv_output) {
-		dump_sensor_fc_thredshold_csv(thresh_available, thresh_status, rsp, sr);
+		dump_sensor_fc_thredshold_csv(file, thresh_available, thresh_status, rsp, sr);
 	} else {
 		if (verbose == 0) {
-			dump_sensor_fc_thredshold(thresh_available, thresh_status, rsp, sr);
+			dump_sensor_fc_thredshold(file, thresh_available, thresh_status, rsp, sr);
 		} else {
-			dump_sensor_fc_thredshold_verbose(thresh_available, thresh_status,
+			dump_sensor_fc_thredshold_verbose(file, thresh_available, thresh_status,
 			                                  intf, sensor, rsp, sr);
 		}
 	}
@@ -480,18 +483,18 @@ ipmi_sensor_print_fc_threshold(struct ipmi_intf *intf,
 }
 
 int
-ipmi_sensor_print_fc(struct ipmi_intf *intf,
+ipmi_sensor_print_fc(FILE *file, struct ipmi_intf *intf,
 		       struct sdr_record_common_sensor *sensor,
 			uint8_t sdr_record_type)
 {
 	if (IS_THRESHOLD_SENSOR(sensor))
-		return ipmi_sensor_print_fc_threshold(intf, sensor, sdr_record_type);
+		return ipmi_sensor_print_fc_threshold(file, intf, sensor, sdr_record_type);
 	else
 		return ipmi_sensor_print_fc_discrete(intf, sensor, sdr_record_type);
 }
 
 static int
-ipmi_sensor_list(struct ipmi_intf *intf)
+ipmi_sensor_list(FILE *file, struct ipmi_intf *intf)
 {
 	struct sdr_get_rs *header;
 	struct ipmi_sdr_iterator *itr;
@@ -517,7 +520,7 @@ ipmi_sensor_list(struct ipmi_intf *intf)
 		switch (header->type) {
 		case SDR_RECORD_TYPE_FULL_SENSOR:
 		case SDR_RECORD_TYPE_COMPACT_SENSOR:
-			ipmi_sensor_print_fc(intf,
+			ipmi_sensor_print_fc(file, intf,
 						   (struct
 						    sdr_record_common_sensor *)
 						   rec,
@@ -881,7 +884,7 @@ ipmi_sensor_set_threshold(struct ipmi_intf *intf, int argc, char **argv)
 }
 
 static int
-ipmi_sensor_get_reading(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_sensor_get_reading(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	struct sdr_record_list *sdr;
 	int i, rc=0;
@@ -925,7 +928,7 @@ ipmi_sensor_get_reading(struct ipmi_intf *intf, int argc, char **argv)
 				continue;
 			}
 			if (csv_output)
-				printf("%s,%s\n", argv[i], sr->s_a_str);
+                fprintf(file,"%s,%s\n", argv[i], sr->s_a_str);
 			else
 				printf("%-16s | %s\n", argv[i], sr->s_a_str);
 
@@ -940,7 +943,7 @@ ipmi_sensor_get_reading(struct ipmi_intf *intf, int argc, char **argv)
 }
 
 static int
-ipmi_sensor_get(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_sensor_get(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int i, v;
 	int rc = 0;
@@ -970,14 +973,14 @@ ipmi_sensor_get(struct ipmi_intf *intf, int argc, char **argv)
 		switch (sdr->type) {
 		case SDR_RECORD_TYPE_FULL_SENSOR:
 		case SDR_RECORD_TYPE_COMPACT_SENSOR:
-			if (ipmi_sensor_print_fc(intf,
+			if (ipmi_sensor_print_fc(file, intf,
 					(struct sdr_record_common_sensor *) sdr->record.common,
 					sdr->type)) {
 				rc = -1;
 			}
 			break;
 		default:
-			if (ipmi_sdr_print_listentry(intf, sdr) < 0) {
+			if (ipmi_sdr_print_listentry(file, intf, sdr) < 0) {
 				rc = (-1);
 			}
 			break;
@@ -989,22 +992,22 @@ ipmi_sensor_get(struct ipmi_intf *intf, int argc, char **argv)
 }
 
 int
-ipmi_sensor_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_sensor_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int rc = 0;
 
 	if (argc == 0) {
-		rc = ipmi_sensor_list(intf);
+		rc = ipmi_sensor_list(file, intf);
 	} else if (!strcmp(argv[0], "help")) {
 		lprintf(LOG_NOTICE, "Sensor Commands:  list thresh get reading");
 	} else if (!strcmp(argv[0], "list")) {
-		rc = ipmi_sensor_list(intf);
+		rc = ipmi_sensor_list(file, intf);
 	} else if (!strcmp(argv[0], "thresh")) {
 		rc = ipmi_sensor_set_threshold(intf, argc - 1, &argv[1]);
 	} else if (!strcmp(argv[0], "get")) {
-		rc = ipmi_sensor_get(intf, argc - 1, &argv[1]);
+		rc = ipmi_sensor_get(file, intf, argc - 1, &argv[1]);
 	} else if (!strcmp(argv[0], "reading")) {
-		rc = ipmi_sensor_get_reading(intf, argc - 1, &argv[1]);
+		rc = ipmi_sensor_get_reading(file, intf, argc - 1, &argv[1]);
 	} else {
 		lprintf(LOG_ERR, "Invalid sensor command: %s", argv[0]);
 		rc = -1;

@@ -527,7 +527,7 @@ ipmi_get_channel_cipher_suites(struct ipmi_intf *intf,
 }
 
 static int
-ipmi_print_channel_cipher_suites(struct ipmi_intf *intf,
+ipmi_print_channel_cipher_suites(FILE *file, struct ipmi_intf *intf,
                                  const char *payload_type,
                                  uint8_t channel)
 {
@@ -545,11 +545,11 @@ ipmi_print_channel_cipher_suites(struct ipmi_intf *intf,
 		return rc;
 
 	if (!csv_output) {
-		printf("%s\n", header_str);
+		fprintf(file, "%s\n", header_str);
 	}
 	for (i = 0; i < nr_suites; i++) {
 		/* We have everything we need to spit out a cipher suite record */
-		printf(csv_output ? "%d,%s,%s,%s,%s\n"
+		fprintf(file, csv_output ? "%d,%s,%s,%s,%s\n"
 		                  : "%-4d %-7s %-15s %-15s %-15s\n",
 		       suites[i].cipher_suite_id,
 		       iana_string(suites[i].iana),
@@ -902,7 +902,7 @@ ipmi_set_user_access(struct ipmi_intf *intf, int argc, char **argv)
 }
 
 int
-ipmi_channel_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_channel_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int retval = 0;
 	uint8_t channel;
@@ -967,7 +967,7 @@ ipmi_channel_main(struct ipmi_intf *intf, int argc, char **argv)
 				return (-1);
 			}
 		}
-		retval = ipmi_print_channel_cipher_suites(intf,
+		retval = ipmi_print_channel_cipher_suites(file, intf,
 		                                          argv[1], /* ipmi | sol */
 		                                          channel);
 	} else {

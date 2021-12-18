@@ -125,4 +125,4 @@ struct get_session_info_rsp
 
 
 
-int ipmi_session_main(struct ipmi_intf *, int, char **);
+int ipmi_session_main(FILE *file, struct ipmi_intf *, int, char **);
