@@ -74,7 +74,7 @@
 
 # define KWUM_GET_BYTE_AT_OFFSET(pBuffer,os)            pBuffer[os]
 
-int ipmi_fwum_main(struct ipmi_intf *, int, char **);
+int ipmi_fwum_main(FILE *file, struct ipmi_intf *, int, char **);
 
 typedef enum eKFWUM_BoardList
 {

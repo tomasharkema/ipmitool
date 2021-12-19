@@ -34,7 +34,7 @@
 
 #include <ipmitool/ipmi.h>
 
-int ipmi_firewall_main(struct ipmi_intf *, int, char **);
+int ipmi_firewall_main(FILE *file, struct ipmi_intf *, int, char **);
 
 #define BMC_GET_NETFN_SUPPORT				0x09
 #define BMC_GET_COMMAND_SUPPORT				0x0A

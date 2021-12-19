@@ -182,7 +182,7 @@ ipmi_cmd_print(struct ipmi_cmd * cmdlist)
  * returns -1 if command is not found
  */
 int
-ipmi_cmd_run(struct ipmi_intf * intf, char * name, int argc, char ** argv)
+ipmi_cmd_run(FILE *file, struct ipmi_intf * intf, char * name, int argc, char ** argv)
 {
 	struct ipmi_cmd * cmd = intf->cmdlist;
 
@@ -192,7 +192,7 @@ ipmi_cmd_run(struct ipmi_intf * intf, char * name, int argc, char ** argv)
 			return -1;
 
 		if (!strcmp(cmd->name, "default"))
-			return cmd->func(intf, 0, NULL);
+			return cmd->func(file, intf, 0, NULL);
 
 		lprintf(LOG_ERR, "No command provided!");
 		ipmi_cmd_print(intf->cmdlist);
@@ -206,13 +206,13 @@ ipmi_cmd_run(struct ipmi_intf * intf, char * name, int argc, char ** argv)
 	if (!cmd->func) {
 		cmd = intf->cmdlist;
 		if (!strcmp(cmd->name, "default"))
-			return cmd->func(intf, argc+1, argv-1);
+			return cmd->func(file, intf, argc+1, argv-1);
 
 		lprintf(LOG_ERR, "Invalid command: %s", name);
 		ipmi_cmd_print(intf->cmdlist);
 		return -1;
 	}
-	return cmd->func(intf, argc, argv);
+	return cmd->func(file, intf, argc, argv);
 }
 
 static void
@@ -1022,10 +1022,10 @@ ipmi_main(int argc, char ** argv,
 
 	/* now we finally run the command */
 	if (argc-optind > 0)
-		rc = ipmi_cmd_run(ipmi_main_intf, argv[optind], argc-optind-1,
+		rc = ipmi_cmd_run(stdout, ipmi_main_intf, argv[optind], argc-optind-1,
 				&(argv[optind+1]));
 	else
-		rc = ipmi_cmd_run(ipmi_main_intf, NULL, 0, NULL);
+		rc = ipmi_cmd_run(stdout, ipmi_main_intf, NULL, 0, NULL);
 
 	if (my_long_packet_set == 1) {
 		if (ipmi_oem_active(ipmi_main_intf, "kontron")) {

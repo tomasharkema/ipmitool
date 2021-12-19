@@ -2492,7 +2492,7 @@ print_lan_usage(void)
 
 
 int
-ipmi_lanp_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_lanp_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int rc = 0;
 	uint8_t chan = 0;

@@ -40,4 +40,4 @@
 
 #define IPMI_TSOL_DEF_PORT	6230
 
-int ipmi_tsol_main(struct ipmi_intf *, int, char **);
+int ipmi_tsol_main(FILE *file, struct ipmi_intf *, int, char **);

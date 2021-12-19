@@ -1804,7 +1804,7 @@ ipmi_pef2_help(void)
 "       pef timer set <0x00-0xFF>");
 }
 
-int ipmi_pef_main(struct ipmi_intf *intf, int argc, char **argv)
+int ipmi_pef_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int rc = 0;
 

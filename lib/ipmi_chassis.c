@@ -1677,7 +1677,7 @@ ipmi_chassis_power_policy(struct ipmi_intf * intf, uint8_t policy)
 }
 
 int
-ipmi_power_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_power_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 	uint8_t ctl = 0;
@@ -1931,7 +1931,7 @@ bootdev_parse_options(char *optstring, uint8_t flags[])
 }
 
 int
-ipmi_chassis_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_chassis_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = -1;
 

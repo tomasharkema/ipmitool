@@ -366,7 +366,7 @@ print_tsol_usage(void)
 }
 
 int
-ipmi_tsol_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_tsol_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	struct pollfd fds_wait[3], fds_data_wait[3], *fds;
 	struct sockaddr_in sin, myaddr, *sa_in;

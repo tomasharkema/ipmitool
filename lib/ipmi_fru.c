@@ -4416,7 +4416,7 @@ ipmi_fru_write_internal_use(struct ipmi_intf * intf, uint8_t id, char * pFileNam
 }
 
 int
-ipmi_fru_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_fru_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 	uint8_t fru_id = 0;

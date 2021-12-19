@@ -142,7 +142,7 @@ const struct valstr bankStateValS[] = {
  * returns -1 on error
  */
 int
-ipmi_fwum_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_fwum_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int rc = 0;
 	printf("FWUM extension Version %d.%d\n", VER_MAJOR, VER_MINOR);

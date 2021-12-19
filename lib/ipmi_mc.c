@@ -1275,7 +1275,7 @@ ipmi_mc_rst_watchdog(struct ipmi_intf * intf)
  * returns -1 on error
  */
 int
-ipmi_mc_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_mc_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 

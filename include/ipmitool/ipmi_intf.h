@@ -189,7 +189,7 @@ struct ipmi_session {
 };
 
 struct ipmi_cmd {
-	int (*func)(struct ipmi_intf * intf, int argc, char ** argv);
+	int (*func)(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);
 	const char * name;
 	const char * desc;
 };

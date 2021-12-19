@@ -1878,7 +1878,7 @@ ipmi_picmg_clk_set(struct ipmi_intf * intf, int argc, char ** argv)
 
 
 int
-ipmi_picmg_main (struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_picmg_main (FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 	int showProperties = 0;

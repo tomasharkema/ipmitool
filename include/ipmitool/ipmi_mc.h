@@ -55,7 +55,7 @@
 #define BMC_GET_GLOBAL_ENABLES	0x2f
 #define BMC_GET_GUID		0x37
 
-int ipmi_mc_main(struct ipmi_intf *, int, char **);
+int ipmi_mc_main(FILE *file, struct ipmi_intf *, int, char **);
 
 /*
  * Response data from IPM Get Device ID Command (IPMI rev 1.5, section 17.1)

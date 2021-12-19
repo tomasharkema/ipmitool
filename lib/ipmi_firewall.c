@@ -1167,7 +1167,7 @@ ipmi_firewall_reset(struct ipmi_intf * intf, int argc, char ** argv)
  * returns -1 on error
  */
 int
-ipmi_firewall_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_firewall_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	int rc = 0;
 

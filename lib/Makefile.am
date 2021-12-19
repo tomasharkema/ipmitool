@@ -43,7 +43,6 @@ libipmitool_la_SOURCES	= helper.c ipmi_sdr.c ipmi_sel.c ipmi_sol.c ipmi_pef.c \
 				  ipmi_ime.c ipmi_dcmi.c hpm2.c ipmi_vita.c \
 				  ipmi_lanp6.c ipmi_cfgp.c ipmi_quantaoem.c ipmi_time.c
 
-libipmitool_la_LDFLAGS		= -export-static
 libipmitool_la_LIBADD		= -lm
 libipmitool_la_DEPENDENCIES	= 
 

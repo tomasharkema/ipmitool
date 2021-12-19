@@ -133,7 +133,7 @@ ipmi_master_write_read(struct ipmi_intf * intf, uint8_t bus, uint8_t addr,
 #define RAW_SPD_SIZE	512
 
 int
-ipmi_rawspd_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_rawspd_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct ipmi_rs *rsp;
 	uint8_t msize = IPMI_I2C_MASTER_MAX_SIZE; /* allow to override default */
@@ -194,7 +194,7 @@ static void rawi2c_usage(void)
 #define CHAN_KW "chan="
 
 int
-ipmi_rawi2c_main(struct ipmi_intf * intf, int argc, char ** argv)
+ipmi_rawi2c_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv)
 {
 	struct ipmi_rs * rsp;
 	uint8_t wdata[IPMI_I2C_MASTER_MAX_SIZE];

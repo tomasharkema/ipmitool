@@ -124,6 +124,6 @@ enum {
 	IPMI_LANP_CHAN_ACCESS_MODE=201,
 };
 
-int  ipmi_lanp_main(struct ipmi_intf *, int, char **);
+int  ipmi_lanp_main(FILE *file, struct ipmi_intf *, int, char **);
 
 uint8_t find_lan_channel(struct ipmi_intf *intf, uint8_t start);

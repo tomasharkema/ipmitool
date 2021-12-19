@@ -48,5 +48,5 @@
 
 int ipmi_chassis_power_status(struct ipmi_intf * intf);
 int ipmi_chassis_power_control(struct ipmi_intf * intf, uint8_t ctl);
-int ipmi_chassis_main(struct ipmi_intf * intf, int argc, char ** argv);
-int ipmi_power_main(struct ipmi_intf * intf, int argc, char ** argv);
+int ipmi_chassis_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);
+int ipmi_power_main(FILE *file, struct ipmi_intf * intf, int argc, char ** argv);

@@ -38,7 +38,6 @@ DIST_SUBDIRS			= lan lanplus open lipmi imb bmc free serial dummy usb dbus
 lib_LTLIBRARIES		= libintf.la
 libintf_la_SOURCES		= ipmi_intf.c
 libintf_la_CFLAGS		= -DDEFAULT_INTF='"@DEFAULT_INTF@"'
-libintf_la_LDFLAGS		= -export-static
 libintf_la_LIBADD		= @IPMITOOL_INTF_LIB@
 libintf_la_DEPENDENCIES		= @IPMITOOL_INTF_LIB@
 

@@ -67,7 +67,7 @@ static int ipmi_kontronoem_send_set_large_buffer(struct ipmi_intf *intf,
 static char *bootdev[] = {"BIOS", "FDD", "HDD", "CDROM", "network", 0};
 
 int
-ipmi_kontronoem_main(struct ipmi_intf *intf, int argc, char **argv)
+ipmi_kontronoem_main(FILE *file, struct ipmi_intf *intf, int argc, char **argv)
 {
 	int rc = 0;
 	if (argc == 0) {
