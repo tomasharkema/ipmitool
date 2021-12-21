@@ -268,3 +268,7 @@ void ipmi_cleanup(struct ipmi_intf * intf);
 #if defined(IPMI_INTF_LAN) || defined (IPMI_INTF_LANPLUS)
 int  ipmi_intf_socket_connect(struct ipmi_intf * intf);
 #endif
+
+#ifdef IPMI_INTF_LANPLUS
+extern struct ipmi_intf ipmi_lanplus_intf;
+#endif
